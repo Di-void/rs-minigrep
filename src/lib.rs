@@ -11,14 +11,18 @@ pub struct Config {
 impl Config {
     // `&[String] allows this function to work on a slice of Strings (any sequence of continguous String values)`
     // The significance here is that it can take `any` sequence of String values not just Vectors (if it were `&Vector<String>` instead)
-    pub fn new(args: &[String]) -> Result<Self, &'static str> {
-        if args.len() < 3 {
-            return Err("not enough arguments");
-        }
+    pub fn new(mut args: std::env::Args) -> Result<Self, &'static str> {
+        args.next();
         // It's better to have a working program than to hyperoptimize on first pass
         // XP helps in starting off with most efficient solution
-        let query = args[1].clone();
-        let filename = args[2].clone();
+        let query = match args.next() {
+            Some(arg) => arg,
+            None => return Err("Didn't get a query string"),
+        };
+        let filename = match args.next() {
+            Some(arg) => arg,
+            None => return Err("Didn't get a file name"),
+        };
 
         // returns a boolean
         let case_sensitive = env::var("CASE_INSENSITIVE").is_err();
@@ -32,15 +36,11 @@ impl Config {
 }
 
 pub fn search<'a>(query: &str, contents: &'a str) -> Vec<&'a str> {
-    let mut results = Vec::new();
-
-    for line in contents.lines() {
-        if line.contains(query) {
-            results.push(line);
-        }
-    }
-
-    results
+    // using iterator adaptors
+    contents
+        .lines()
+        .filter(|line| line.contains(query))
+        .collect()
 }
 
 pub fn search_case_insensitive<'a>(query: &str, contents: &'a str) -> Vec<&'a str> {
